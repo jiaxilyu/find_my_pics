@@ -138,7 +138,6 @@ class CloudWatch:
         if response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
             logger.info('get metric data from cloud watch')
             query_results = list(map(lambda x:x['Values'], response['MetricDataResults']))
-            print(response)
             res = {'Hit_Rate':query_results[0], 'Miss_Rate':query_results[1], 'Num_Items_In_Cache':query_results[2], 'cachesize':query_results[3], 'numrequests':query_results[4]}
             return res
         else:

@@ -27,7 +27,10 @@ class AutoScalar:
     
     def get_miss_rate(self):
         statistics = self.cloudwatch.get_metrics_data()
-        return mean(statistics["Miss_Rate"])
+        if len(statistics["Miss_Rate"]) == 0:
+            return 0
+        else:
+            return mean(statistics["Miss_Rate"])
     
     def get_new_scalar(self):
         miss_rate = self.get_miss_rate()
