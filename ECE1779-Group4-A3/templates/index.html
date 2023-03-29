@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signin</title>
+</head>
+<body>
+    <h1>Signin</h1>
+    <p>Fill out the form below to log in to your account.</p>
+    <div id="sign-in-url" data-url="{{ url_for('sign_in') }}"></div>
+    <div id="profile-url" data-url="{{ url_for('profile_page') }}"></div>
+    <div id="index-url" data-url="{{ url_for('index') }}"></div>
+    <!-- Display error message if there is one -->
+    {% if error_message %}
+        <p>{{ error_message }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('sign_in') }}" id="query-form">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Log in</button>
+    </form>
+    <p>Don't have an account? <a href="{{ url_for('sign_up') }}">Sign up</a></p>
+</body>
+
+<script>
+    const profileUrl = document.getElementById('profile-url').getAttribute('data-url');
+    const indexUrl = document.getElementById('index-url').getAttribute('data-url');
+    // if the user is already logged in, redirect to the profile page
+    if (localStorage.getItem('access_token')) {
+        window.location.href = profileUrl;
+    }
+    document.getElementById('query-form').addEventListener("submit", function(event) {
+        event.preventDefault();
+        const form = document.getElementById('query-form');
+        const formData = new FormData(this);
+        const apiUrl = document.getElementById('sign-in-url').getAttribute('data-url');
+        fetch(apiUrl, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // if password is incorrect, redirect to the sign in page
+            if (data.error) {
+                window.location.href = indexUrl;
+            }
+            else {
+                // Store the access token in local storage
+                localStorage.setItem('access_token', data.access_token);
+                // Redirect to the profile page
+                window.location.href = profileUrl;
+            }
+            
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    }
+    )
+
+</script>
+</html>
