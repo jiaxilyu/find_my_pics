@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta name="referrer" content="no-referrer" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+  <title>Group 4: Assignment 3</title>
+</head>
+
+<body>
+  <!-- NavBar -->
+  <nav class="navbar navbar-expand-lg" style="background-color: #1d9efa;" data-bs-theme="dark">
+    <div class="container-fluid">
+      <a class="navbar-brand mx-3" href="{{ url_for('explore') }}">ECE1779 Group4 Assignment 3</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" href="{{ url_for('explore') }}">Explore</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('search') }}">Search</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <!-- Body -->
+  <div id="like-url" url="{{ url_for('like') }}"></div>
+  <div id="report-url" url="{{ report_post_view_endpoint }}"></div>
+  <div class="container w-40 mx-auto">
+    <div class="page-title my-5">
+      <h1>{{ username | default((label|title) | default('Explore')) }}</h1>
+    </div>
+    <div class="card-container" style="justify-content: space-between">
+      {% for post in posts %}
+      <div class="card m-3 mx-auto post-card col-12 col-sm-6" id="{{ post['post_id'] }}">
+        <img src="{{ post['image'] }}" class="card-img-top" alt="...">
+        <div class="card-body">
+          <p class="card-text">
+            <a href="{{ url_for('explore') + '/user/' + post['username'] }}" style="text-decoration: none; color:rgb(49, 105, 245);">@{{ post['username'] }}</a>
+          </p>
+          <p class="card-text">{{ post['description'] }}</p>
+          {% if post['labels'] %}
+          <p class="card-text">
+            {% for label in post['labels'] %}
+            <a href="{{ url_for('explore') + '/label/' + label }}" class="badge fw-normal text-bg-primary" style="opacity: 0.7; text-decoration: none;">{{ '#' + label }}</a>
+            {% endfor %}
+          </p>
+          {% endif %}
+          <p class="card-subtitle text-body-secondary">Posted at {{ post['time'] }}</p>
+          <button type="button" class="btn btn-primary mt-3" post_id="{{ post['post_id'] }}">Like {{ post['likes']}}</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <script>
+    const likeButtons = document.querySelectorAll('.btn-primary');
+    const likeUrl = document.getElementById('like-url').getAttribute('url');
+    const accessToken = localStorage.getItem('access_token');
+    likeButtons.forEach(button => {
+      // only show the like button if user is logged in
+      if (accessToken == null || accessToken == undefined) {
+        button.setAttribute('style', 'display: none');
+        return;
+      }
+      let numLikes = parseInt(button.innerHTML.split(' ')[1]);
+
+      button.addEventListener('click', () => {
+        const postId = button.getAttribute('post_id');
+        fetch(likeUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            post_id: postId
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+            if (data.error) {
+                console.log(data.error);
+            }
+            else {
+              numLikes += 1;
+              button.innerHTML = `Like ${numLikes}`;
+            }
+        })
+        .catch(error => {
+            console.log(error);
+        });
+      });
+    });
+
+    // report an event when every time a post is scrolled into visible area
+    const postCards = document.querySelectorAll('.post-card');
+    const reportUrl = document.getElementById('report-url').getAttribute('url');
+    postCards.forEach(function(postCard) {
+      var observer = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && entry.target.style.display !== 'none') {
+            var postId = entry.target.getAttribute('id');
+            fetch(reportUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                post_id: postId
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.log(data.error);
+                }
+                else {
+                  console.log(`Reported post ${postId}, current view count: ${data.value}`);
+                }
+            })
+            .catch(error => {
+                console.log(error);
+            });
+          }
+        }, { threshold: [0]});
+      });
+
+      observer.observe(postCard);
+    })
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous">
+  </script>
+</body>
+
+</html>
